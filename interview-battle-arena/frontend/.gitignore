@@ -2,3 +2,4 @@ node_modules/
 dist/
 .env
 .env.local
+interview-battle-arena/backend/src/main/resources/application.properties

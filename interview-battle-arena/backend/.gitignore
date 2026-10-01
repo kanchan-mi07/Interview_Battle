@@ -1,4 +1,6 @@
+.env
+backend/.env
+frontend/.env.local
 target/
-.idea/
-*.iml
-.vscode/
+node_modules/
+dist/
