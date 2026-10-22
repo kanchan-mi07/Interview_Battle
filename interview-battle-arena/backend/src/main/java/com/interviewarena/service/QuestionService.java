@@ -8,7 +8,9 @@ import com.interviewarena.dto.QuestionResponse;
 import com.interviewarena.entity.Category;
 import com.interviewarena.entity.Difficulty;
 import com.interviewarena.entity.Question;
+import com.interviewarena.entity.User;
 import com.interviewarena.exception.ApiException;
+import com.interviewarena.repository.BattleQuestionRepository;
 import com.interviewarena.repository.QuestionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -31,14 +33,20 @@ public class QuestionService {
     private static final int POINTS_PER_CORRECT = 100;
 
     private final QuestionRepository questionRepository;
+    private final BattleQuestionRepository battleQuestionRepository;
 
     @Transactional(readOnly = true)
-    public List<QuestionResponse> getQuestions(Category category, Difficulty difficulty, Integer count) {
+    public List<QuestionResponse> getQuestions(User me, Category category, Difficulty difficulty, Integer count) {
         int size = count == null ? DEFAULT_COUNT : Math.max(1, Math.min(count, MAX_COUNT));
+
+        // Never hand out practice questions that belong to one of the player's live battles.
+        List<Long> excluded = battleQuestionRepository.findActiveQuestionIds(me.getId());
+        if (excluded.isEmpty()) excluded = List.of(-1L); // "NOT IN ()" is invalid SQL
 
         List<Question> questions = questionRepository.findRandomFiltered(
                 category == null ? null : category.name(),
                 difficulty == null ? null : difficulty.name(),
+                excluded,
                 size);
 
         if (questions.isEmpty()) {
@@ -56,7 +64,7 @@ public class QuestionService {
 
     /** Practice only: nothing is saved and no rating or stats change. */
     @Transactional(readOnly = true)
-    public PracticeResultResponse submitPractice(PracticeSubmitRequest request) {
+    public PracticeResultResponse submitPractice(User me, PracticeSubmitRequest request) {
         List<PracticeAnswer> answers = request.answers();
 
         Set<Long> seen = new HashSet<>();
@@ -64,6 +72,12 @@ public class QuestionService {
             if (!seen.add(a.questionId())) {
                 throw new ApiException(HttpStatus.BAD_REQUEST, "Each question can only be answered once.");
             }
+        }
+
+        // Practice results reveal the correct answer, so they must not work for questions in a live battle.
+        Set<Long> inLiveBattle = new HashSet<>(battleQuestionRepository.findActiveQuestionIds(me.getId()));
+        if (seen.stream().anyMatch(inLiveBattle::contains)) {
+            throw new ApiException(HttpStatus.CONFLICT, "Finish your current battle before practicing those questions.");
         }
 
         Map<Long, Question> byId = questionRepository.findAllById(seen).stream()

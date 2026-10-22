@@ -31,13 +31,13 @@ export default function Register() {
         {error && <p className="alert alert-error">{error}</p>}
 
         <label htmlFor="username">Username</label>
-        <input id="username" name="username" value={form.username} onChange={onChange} required />
+        <input id="username" name="username" minLength={3} maxLength={30} value={form.username} onChange={onChange} required />
 
         <label htmlFor="email">Email</label>
         <input id="email" name="email" type="email" value={form.email} onChange={onChange} required />
 
         <label htmlFor="password">Password</label>
-        <input id="password" name="password" type="password" minLength={6}
+        <input id="password" name="password" type="password" minLength={6} maxLength={72}
                value={form.password} onChange={onChange} required />
 
         <button className="btn btn-primary" disabled={submitting}>

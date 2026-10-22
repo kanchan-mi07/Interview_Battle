@@ -16,12 +16,15 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
             SELECT * FROM questions
             WHERE (:category IS NULL OR category = :category)
               AND (:difficulty IS NULL OR difficulty = :difficulty)
+              AND id NOT IN (:excluded)
             ORDER BY RAND()
             LIMIT :count
             """, nativeQuery = true)
     List<Question> findRandomFiltered(@Param("category") String category,
                                       @Param("difficulty") String difficulty,
+                                      @Param("excluded") java.util.Collection<Long> excluded,
                                       @Param("count") int count);
+
     @Query("select q.questionText from Question q")
     List<String> findAllQuestionTexts();
 }

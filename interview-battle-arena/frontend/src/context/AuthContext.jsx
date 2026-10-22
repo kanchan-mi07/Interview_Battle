@@ -16,7 +16,10 @@ export function AuthProvider({ children }) {
     }
     getMe()
       .then(setUser)
-      .catch(() => localStorage.removeItem('token'))
+      .catch((err) => {
+        // Only drop the token when the server says it is invalid, not on a network blip
+        if (err.response?.status === 401) localStorage.removeItem('token');
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -30,10 +33,12 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('token');
     setUser(null);
   };
-const refreshUser = async () => {
+
+  const refreshUser = async () => {
     const fresh = await getMe();
     setUser(fresh);
   };
+
   return (
     <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
       {children}

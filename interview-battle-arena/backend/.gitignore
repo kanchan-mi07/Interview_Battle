@@ -4,3 +4,7 @@ frontend/.env.local
 target/
 node_modules/
 dist/
+.env.example
+
+*.iml
+.idea/

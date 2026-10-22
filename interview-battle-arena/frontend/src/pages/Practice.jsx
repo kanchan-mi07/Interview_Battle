@@ -85,7 +85,7 @@ export default function Practice() {
       <main className="page page-narrow">
         <div className="quiz-top">
           <span className="question-count">{index} of {questions.length} answered</span>
-          <Timer seconds={SECONDS_PER_QUESTION} resetKey={index} onExpire={() => advance(null)} />
+          <Timer seconds={SECONDS_PER_QUESTION} resetKey={index} onExpire={() => advance(selected)} />
         </div>
         <div className="progress">
           <div className="progress-bar" style={{ width: `${(index / questions.length) * 100}%` }} />

@@ -14,7 +14,7 @@ export default function Home() {
 
   const label = {
     checking: 'Checking backend…',
-    up: 'Backend connected on port 8080',
+    up: 'Backend connected',
     down: 'Backend unreachable. Is Spring Boot running?',
   }[status];
 

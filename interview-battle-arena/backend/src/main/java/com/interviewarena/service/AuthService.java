@@ -24,6 +24,10 @@ public class AuthService {
         String email = request.email().trim().toLowerCase();
         String username = request.username().trim();
 
+        if (username.length() < 3 || username.length() > 30) { // @Size ran before trim()
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Username must be 3 to 30 characters.");
+        }
+
         if (userRepository.existsByEmail(email)) {
             throw new ApiException(HttpStatus.CONFLICT, "Email is already registered.");
         }

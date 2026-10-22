@@ -18,6 +18,7 @@ export default function Battle() {
   const [, setTick] = useState(0);
   const submitting = useRef(false);
   const finishCalled = useRef(false);
+  const seq = useRef(0); // bumped on every submit so stale poll responses can be discarded
 
   const load = useCallback(async () => {
     try {
@@ -70,18 +71,34 @@ export default function Battle() {
     finishBattle(battleId).then(setBattle).catch(() => {});
   }, [allAnswered, battle, battleId]);
 
-  // Poll only while waiting for someone else
-  const polling = battle && (battle.status === 'WAITING' || (allAnswered && battle.status !== 'COMPLETED'));
+  // Clear a half-picked option whenever the question changes (e.g. the server expired it)
+  const currentQuestionId = battle?.currentQuestion?.id;
+  useEffect(() => { setSelected(null); }, [currentQuestionId]);
+
+  // Poll for the opponent's progress/score while the battle is live (not during the countdown)
+  const poll = useCallback(async () => {
+    if (submitting.current) return;
+    const mine = seq.current;
+    try {
+      const latest = await getBattle(battleId);
+      if (!submitting.current && seq.current === mine) setBattle(latest);
+    } catch {
+      /* ignore and retry on the next tick */
+    }
+  }, [battleId]);
+
+  const polling = battle && battle.status !== 'COMPLETED' && !(battle.startsInSeconds > 0);
   useEffect(() => {
     if (!polling) return;
-    const id = setInterval(load, 2000);
+    const id = setInterval(poll, 2500);
     return () => clearInterval(id);
-  }, [polling, load]);
+  }, [polling, poll]);
 
-  // choice = 'A'..'D', or null when the timer ran out
+  // choice = 'A'..'D', or null when the timer ran out with nothing selected
   const submit = async (choice) => {
     if (submitting.current || !battle?.currentQuestion) return;
     submitting.current = true;
+    seq.current += 1;
     setSelected(null);
     try {
       const res = await submitAnswer(battleId, {
@@ -94,6 +111,7 @@ export default function Battle() {
       setFeedback(err.response?.data?.message || 'Could not submit your answer.');
       await load(); // resync with the server
     } finally {
+      seq.current += 1;
       submitting.current = false;
     }
   };
@@ -147,8 +165,9 @@ export default function Battle() {
         <span className="feedback" role="status">{feedback}</span>
         <Timer
           seconds={battle.secondsRemaining}
+          total={battle.questionTimeSeconds}
           resetKey={battle.currentQuestion.id}
-          onExpire={() => submit(null)}
+          onExpire={() => submit(selected)}
         />
       </div>
       <div className="progress">

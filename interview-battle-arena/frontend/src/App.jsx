@@ -26,7 +26,7 @@ export default function App() {
       <Route path="/dashboard" element={protect(<Dashboard />)} />
       <Route path="/profile" element={protect(<Profile />)} />
 
-      {/* Placeholders, replaced in later phases */}
+
       <Route path="/practice" element={protect(<Practice />)} />
            <Route path="/create-battle" element={protect(<CreateBattle />)} />
            <Route path="/join-battle" element={protect(<JoinBattle />)} />

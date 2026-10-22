@@ -18,7 +18,7 @@ export default function Login() {
     setSubmitting(true);
     try {
       await login(form);
-      navigate('/dashboard');
+      navigate(location.state?.from?.pathname || '/dashboard', { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || 'Could not reach the server.');
     } finally {
